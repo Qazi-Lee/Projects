@@ -32,6 +32,8 @@ class _VideoControlPageState extends State<VideoControlPage> {
   WebRTCClient? webrtc;
   //listen
   late StreamSubscription _msgSub;
+  //init
+  bool _initialized=false;
 
   void _toggleCombinationMode() {
     setState(() {
@@ -125,37 +127,41 @@ class _VideoControlPageState extends State<VideoControlPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_initialized) return;
     final args=ModalRoute.of(context)?.settings.arguments as WebRtcData?;
     webrtc=WebRTCClient(args?.channel,args?.Uuid,args?.target,args?.jwt);
     webrtc?.onRendererReady = () {
       setState(() {});
     };
     webrtc?.init();
+    _initialized=true;
   }
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final videoHeight = _isFullscreen
+        ? screenHeight
+        : _showKeyboard
+        ? screenHeight * 0.4
+        : screenHeight * 0.6;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 30),
-                height: _isFullscreen
-                    ? screenHeight
-                    : _showKeyboard
-                    ? screenHeight * 0.4
-                    : screenHeight * 0.6,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 视频区域
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 200),
+              top: 0,
+              left: 0,
+              right: 0,
+              height: videoHeight,
+              child: Container(
                 color: Colors.black,
-                child:  webrtc != null&& webrtc!.remoteRenderer.textureId != null
-                    ? KeyedSubtree(
-                  key: ValueKey(_isFullscreen), // 强制 Widget 重建
-                  child: RTCVideoView(
-                    webrtc!.remoteRenderer,
-                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-                   // objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  ),
+                child: (webrtc != null && webrtc!.remoteRenderer.textureId != null)
+                    ? RTCVideoView(
+                  webrtc!.remoteRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
                 )
                     : const Center(
                   child: Text(
@@ -164,86 +170,91 @@ class _VideoControlPageState extends State<VideoControlPage> {
                   ),
                 ),
               ),
-              if (!_isFullscreen)
-                Expanded(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
+            ),
+
+            // UI 区域（非全屏时显示）
+            if (!_isFullscreen)
+              Positioned(
+                top: videoHeight,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                onPressed: _toggleKeyboard,
+                                child: Text(_showKeyboard ? '关闭键盘' : '打开键盘'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _toggleFullscreen,
+                                child: const Text('全屏'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _switchMode,
+                                child: Text('模式: $_mode'),
+                              ),
+                              if (_showKeyboard)
                                 ElevatedButton(
-                                  onPressed: _toggleKeyboard,
-                                  child: Text(_showKeyboard ? '关闭键盘' : '打开键盘'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: _toggleFullscreen,
-                                //  onPressed: webrtc?.TestRener,
-                                  child: const Text('全屏'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: _switchMode,
-                                 // onPressed: webrtc?.TestRener,
-                                  child: Text('模式: $_mode'),
-                                ),
-                                if (_showKeyboard)
-                                  ElevatedButton(
-                                    onPressed: _toggleCombinationMode,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                      _combinationMode ? Colors.orange : null,
-                                    ),
-                                    child: Text(
-                                        _combinationMode ? '完成' : '组合键'),
+                                  onPressed: _toggleCombinationMode,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                    _combinationMode ? Colors.orange : null,
                                   ),
-                              ],
-                            ),
-                            const SizedBox(height: 8), // 按钮组之间的间距
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _toggleControl,
-                                  child: Text(_isControlling ? '停止操控' : '申请操控'),
+                                  child: Text(_combinationMode ? '完成' : '组合键'),
                                 ),
-                                ElevatedButton(
-                                  onPressed: _toggleMicrophone,
-                                  child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                onPressed: _toggleControl,
+                                child: Text(_isControlling ? '停止操控' : '申请操控'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _toggleMicrophone,
+                                child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_showKeyboard)
+                      Expanded(
+                        child: VirtualKeyboard(
+                          onKeyTap: _onKeyTap,
+                          activeKeys: _pressedKeys,
                         ),
                       ),
-                      if (_showKeyboard)
-                        Expanded(
-                          child: VirtualKeyboard(
-                            onKeyTap: _onKeyTap,
-                            activeKeys: _pressedKeys,
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-            ],
-          ),
-          if (_isFullscreen)
-            Positioned(
-              top: 30,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: _toggleFullscreen,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white70,
-                  foregroundColor: Colors.black,
-                ),
-                child: const Text("退出全屏"),
               ),
-            ),
-        ],
+
+            // 全屏退出按钮
+            if (_isFullscreen)
+              Positioned(
+                top: 20,
+                right: 20,
+                child: ElevatedButton(
+                  onPressed: _toggleFullscreen,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white70,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: const Text("退出全屏"),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -268,27 +279,50 @@ class VirtualKeyboard extends StatelessWidget {
     ['Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift'],
     ['Ctrl', 'Alt', 'Space', 'Alt', 'Ctrl'],
   ];
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: _keyboardLayout.map((row) {
-        return Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: row
-                  .map((key) => Padding(
-                padding: const EdgeInsets.all(2),
-                child: _buildKeyButton(key),
-              ))
-                  .toList(),
+    return SingleChildScrollView( // 允许整个键盘上下滚动
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _keyboardLayout.map((row) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: row
+                    .map((key) => Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: _buildKeyButton(key),
+                ))
+                    .toList(),
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Column(
+  //     children: _keyboardLayout.map((row) {
+  //       return Expanded(
+  //         child: SingleChildScrollView(
+  //           scrollDirection: Axis.horizontal,
+  //           child: Row(
+  //             children: row
+  //                 .map((key) => Padding(
+  //               padding: const EdgeInsets.all(2),
+  //               child: _buildKeyButton(key),
+  //             ))
+  //                 .toList(),
+  //           ),
+  //         ),
+  //       );
+  //     }).toList(),
+  //   );
+  // }
 
   Widget _buildKeyButton(String key) {
     double width = 40;
