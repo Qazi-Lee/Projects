@@ -40,16 +40,21 @@ class _VideoControlPageState extends State<VideoControlPage> {
       _combinationMode = !_combinationMode;
       if (!_combinationMode && _pressedKeys.isNotEmpty) {
         final comboJson = {
-          'type': 'keyCombination',
-          'keys': List.from(_pressedKeys),
+          'type': 'keycombine',
+          'key': List.from(_pressedKeys),
         };
+        final jsonString = jsonEncode(comboJson);
         debugPrint('组合键发送: $comboJson');
+        if (_dataChannel != null) {
+          _dataChannel.send(RTCDataChannelMessage(jsonString));
+        } else {
+          debugPrint('DataChannel 未连接');
+        }
         _pressedKeys.clear();
         // TODO: send comboJson to server
       }
     });
   }
-
   void _toggleKeyboard() {
     setState(() {
       _showKeyboard = !_showKeyboard;
@@ -101,6 +106,41 @@ class _VideoControlPageState extends State<VideoControlPage> {
     setState(() {
       _microphoneOn = !_microphoneOn;
     });
+  }
+  //key
+  void _onKeyEvent(String key, String action) {
+    if (_combinationMode) {
+      if (action == 'down' && !_pressedKeys.contains(key)) {
+        setState(() {
+          _pressedKeys.add(key);
+        });
+      }
+    } else {
+      final message = {
+        'type': action == 'down' ? 'keydown' : 'keyup',
+        'key': key,
+      };
+      final jsonString = jsonEncode(message);
+      debugPrint('发送按键信息: $message');
+      if (_dataChannel != null) {
+        _dataChannel.send(RTCDataChannelMessage(jsonString));
+      } else {
+        debugPrint('DataChannel 未连接');
+      }
+      // TODO: 通过 WebSocket 或 DataChannel 发送 message
+
+    }
+  }
+  //触摸板
+  void _sendTouchpadMessage(Map<String, dynamic> message) {
+    final jsonString = jsonEncode(message);
+    debugPrint('发送触摸板消息: $message');
+    if (_dataChannel != null) {
+      _dataChannel.send(RTCDataChannelMessage(jsonString));
+    } else {
+      debugPrint('DataChannel 未连接');
+    }
+    // TODO: 这里替换成你的消息发送逻辑
   }
 
   @override
@@ -249,29 +289,52 @@ class _VideoControlPageState extends State<VideoControlPage> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                height: 160,
+                height: _showKeyboard? 300:60                                                                                                                                ,
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.25),
                   child: Column(
                     children: [
                       Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Column(
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(80, 36), // 宽:100，高:40
+                                      ),
                                       onPressed: _toggleKeyboard,
                                       child: Text(_showKeyboard ? '关闭键盘' : '打开键盘'),
                                     ),
                                     ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(80, 36), // 宽:100，高:40
+                                      ),
                                       onPressed: _toggleFullscreen,
                                       child: const Text('全屏'),
                                     ),
                                     ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(80, 36), // 宽:100，高:40
+                                      ),
                                       onPressed: _switchMode,
                                       child: Text('模式: $_mode'),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(80, 36), // 宽:100，高:40
+                                      ),
+                                      onPressed: _toggleControl,
+                                      child: Text(_isControlling ? '停止操控' : '申请操控'),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(80, 36), // 宽:100，高:40
+                                      ),
+                                      onPressed: _toggleMicrophone,
+                                      child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
                                     ),
                                     if (_showKeyboard)
                                       ElevatedButton(
@@ -281,20 +344,6 @@ class _VideoControlPageState extends State<VideoControlPage> {
                                         ),
                                         child: Text(_combinationMode ? '完成' : '组合键'),
                                       ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: _toggleControl,
-                                      child: Text(_isControlling ? '停止操控' : '申请操控'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: _toggleMicrophone,
-                                      child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
-                                    ),
                                   ],
                                 ),
                               ]),),

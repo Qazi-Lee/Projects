@@ -226,11 +226,10 @@ class _LoginPageState extends State<LoginPage> {
             arguments:SocketConnectData(channel: _channel, Uuid: Uuid, target: _targetController.text, jwt: Jwt, device_serial: serialNumber),
         );
       }
-      // Navigator.pushNamed(
-      //   context,
-      //   '/mode',
-      //    arguments:SocketConnectData(channel: _channel, Uuid: Uuid, target: _targetController.text, jwt: Jwt, device_serial: serialNumber),
-      // );
+ //      Navigator.pushNamed(
+ //        context,
+ //        '/mode',
+ // );
       // 模拟网络请求延迟
       await Future.delayed(Duration(seconds: 1));
     }
