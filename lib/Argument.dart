@@ -24,5 +24,7 @@ class WebRtcData
   String? Uuid;
   String? target;
   String? jwt;
-  WebRtcData({required this.channel,required this.Uuid,required this.target,required this.jwt});
+  String? device_serial;
+  String? mode;
+  WebRtcData({required this.channel,required this.Uuid,required this.target,required this.jwt,required this.device_serial,required this.mode});
 }

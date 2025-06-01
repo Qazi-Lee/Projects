@@ -12,21 +12,51 @@ class WebRTCClient {
       onRendererReady!();
     }
   }
+  VoidCallback? onConnectClosed;
+  String? _mode;
+
+  bool _isExiting = false;
+  bool _handClose=false;
+  bool _handlingDisconnect=false;
+  void _handlePotentialDisconnect() {
+    if(_handClose) return;
+    if (_handlingDisconnect) return; // 避免重复触发
+    _handlingDisconnect = true;
+    // 延迟 5 秒后再检测状态
+    Future.delayed(Duration(seconds: 3), () {
+      final currentState= _peerConnection.connectionState;
+      final currentIceState = _peerConnection.iceConnectionState;
+      log("5 秒后 ICE 状态为: $currentIceState", name: 'WebRTC');
+      if (currentState == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected||
+          currentState == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        onConnectClosed!();
+        _handlingDisconnect = false;
+        return ;
+      }
+      if (currentIceState == RTCIceConnectionState.RTCIceConnectionStateDisconnected||
+      currentIceState == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        onConnectClosed!();
+        _handlingDisconnect = false;
+        return ;
+      }
+    });
+  }
 
   late WebSocketChannel? webSocket;
   late RTCPeerConnection _peerConnection;
   late RTCDataChannel _dataChannel;
   late MediaStream _localStream;
   late RTCVideoRenderer _remoteRenderer;
-
+  MediaStream get localStream =>_localStream;
 
   String? _Uuid;
   String? _target;
   String? _jwt;
 
+
   //String? _sessionId; // 保存服务端返回的 session_id
-  WebRTCClient(WebSocketChannel? channel,String? Uuid,String? target,String? jwt){
-    webSocket=channel; _Uuid=Uuid;_target=target;_jwt=jwt;
+  WebRTCClient(WebSocketChannel? channel,String? Uuid,String? target,String? jwt,String? mode){
+    webSocket=channel; _Uuid=Uuid;_target=target;_jwt=jwt;_mode=mode;
   }
   Future<void> init() async {
 
@@ -48,12 +78,58 @@ class WebRTCClient {
       ]
     };
     _peerConnection = await createPeerConnection(config);
-    //设置回调函数
-    _peerConnection.onIceConnectionState = (RTCIceConnectionState state)
-    {
-      log('Connect state:$state',name:'WebRTC');
+    //设置状态回调函数
+    _peerConnection.onConnectionState = (RTCPeerConnectionState state) {
+      log('onConnectionState:$state',name:'WebRTC');
+      if(!_handClose)
+        {
+          if ( state == RTCPeerConnectionState.RTCPeerConnectionStateClosed)
+          {
+            if(!_isExiting)
+            {
+              _handClose=true;
+              onConnectClosed!();
+              return;
+            }
+          }
+          if(state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
+              state == RTCPeerConnectionState.RTCPeerConnectionStateFailed )
+          {
+            if(!_isExiting)
+            {
+              _handClose=true;
+              _handlePotentialDisconnect();
+              return;
+            }
+          }
+        }
     };
-
+    // _peerConnection.onIceConnectionState = (RTCIceConnectionState state)
+    // {
+    //   log('onIceConnectionState:$state',name:'WebRTC');
+    //   if(!_handClose)
+    //     {
+    //       if ( state == RTCIceConnectionState.RTCIceConnectionStateClosed)
+    //       {
+    //         if(!_isExiting)
+    //         {
+    //           _handClose=true;
+    //           onConnectClosed!();
+    //           return;
+    //         }
+    //       }
+    //       if(state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
+    //           state == RTCIceConnectionState.RTCIceConnectionStateFailed)
+    //       {
+    //         if(!_isExiting)
+    //         {
+    //           _handClose=true;
+    //           _handlePotentialDisconnect();
+    //           return;
+    //         }
+    //       }
+    //     }
+    // };
 
 
     // 2. 获取音频流（不获取视频）
@@ -68,7 +144,6 @@ class WebRTCClient {
     if (audioTracks.isNotEmpty) {
       await _peerConnection.addTrack(audioTracks[0], _localStream);
     }
-
   /*  await _peerConnection.addTransceiver(
       kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
       init: RTCRtpTransceiverInit(
@@ -186,7 +261,7 @@ void TestRener() async
     'cmd':'offer',
     'data':jsonEncode({
     'sdp': offer.sdp,
-    'mode': 'balanced',
+    'mode': _mode,
     'client_uuid':_Uuid,
     'jwt':_jwt,
        })
@@ -264,10 +339,17 @@ void TestRener() async
 
 
   RTCVideoRenderer get remoteRenderer => _remoteRenderer;
+  RTCDataChannel get dataChannel => _dataChannel;
 
   void dispose() {
+    _peerConnection.close();
+    _dataChannel.close();
     _remoteRenderer.dispose();
     _localStream.dispose();
-    _peerConnection.close();
+  }
+
+  void close() {
+    _isExiting=true;
+    dispose();
   }
 }

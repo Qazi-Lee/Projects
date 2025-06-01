@@ -135,30 +135,33 @@ class SelectMode extends StatelessWidget {
   }
   void _Low(BuildContext context)
   {
+    String? m_mode="low";
     Navigator.pushNamed(
       context,
       '/video',
-      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt),
+      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt,device_serial:_device_serial,mode: m_mode),
     );
     print('_Low');
   }
 
   void _High(BuildContext context)
   {
+    String? m_mode="high";
     Navigator.pushNamed(
       context,
       '/video',
-      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt),
+      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt,device_serial:_device_serial,mode: m_mode),
     );
     print('_High');
   }
 
   void _Auto(BuildContext context)
   {
+    String? m_mode="balanced";
     Navigator.pushNamed(
       context,
       '/video',
-      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt),
+      arguments: WebRtcData(channel: _channel, Uuid: _Uuid, target: _target, jwt: _jwt,device_serial:_device_serial,mode: m_mode),
     );
     print('_Auto');
   }
