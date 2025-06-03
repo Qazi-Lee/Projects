@@ -42,11 +42,11 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       routes: {
         '/': (context) => LoadingPage(),
-        '/login': (context) => LoginPage(),
-        '/error': (context) => ConnectionErrorPage(),
-        '/server':(contest) =>ServerDisconnectedPage(),
-        '/mode': (context) => SelectMode(),
-        '/video': (context)=> VideoControlPage(),
+        '/login' : (context) => LoginPage(),
+        '/error' : (context) => ConnectionErrorPage(),
+        '/server': (contest) => ServerDisconnectedPage(),
+        '/mode'  : (context) => SelectMode(),
+        '/video' : (context) => VideoControlPage(),
       },
     );
   }

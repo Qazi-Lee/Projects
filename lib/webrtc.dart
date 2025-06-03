@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer';
 
@@ -162,7 +161,7 @@ class WebRTCClient {
         log('视频流已连接', name: 'WebRTC');
         log('srcObject 设置为: ${_remoteRenderer.srcObject?.id}');
         Future.delayed(Duration(seconds: 1), () {
-          log('Renderer textureId after 1s: ${_remoteRenderer.textureId}');
+          log('Renderer textureId after 1s: ${_remoteRenderer.textureId}',name:'WebRTC');
         });
       }
       if (event.track.kind == 'audio') {

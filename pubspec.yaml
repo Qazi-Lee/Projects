@@ -28,11 +28,12 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  path_provider: ^2.1.5
   web_socket_channel: ^2.4.0
   device_info_plus: ^10.0.1
   permission_handler: ^11.0.1 # 仅Android需要
   fluttertoast: ^8.2.4
-  flutter_joystick: ^1.0.3
+  flutter_joystick: ^0.2.0
   flutter:
     sdk: flutter
   flutter_webrtc: ^0.13.1+hotfix.1
