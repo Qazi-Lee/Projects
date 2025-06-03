@@ -139,17 +139,17 @@ class _VideoControlPageState extends State<VideoControlPage> {
       }
 
   }
-  void _toggleMicrophone() {
-    if (webrtc?.localStream.getAudioTracks().first != null) {
-      webrtc?.localStream
-          .getAudioTracks()
-          .first
-          .enabled = _microphoneOn;
-    }
-    setState(() {
-      _microphoneOn = !_microphoneOn;
-    });
-  }
+  // void _toggleMicrophone() {
+  //   if (webrtc?.localStream.getAudioTracks().first != null) {
+  //     webrtc?.localStream
+  //         .getAudioTracks()
+  //         .first
+  //         .enabled = _microphoneOn;
+  //   }
+  //   setState(() {
+  //     _microphoneOn = !_microphoneOn;
+  //   });
+  // }
   //keyEvent
   void _onKeyEvent(String key, String action) {
     if (_combinationMode) {
@@ -275,21 +275,21 @@ class _VideoControlPageState extends State<VideoControlPage> {
     return  WillPopScope(
         onWillPop: () async {
           //发送一条关闭消息
-          webrtc?.webSocket?.sink.add(
-            jsonEncode({
-              'type': 'message',
-              'target_uuid': args?.target,
-              'from':args?.Uuid,
-              'payload':jsonEncode({
-                'cmd':'closertc',
-                'data':jsonEncode({
-                  'jwt': args?.jwt,
-                  'uuid': args?.Uuid,
-                  'device_serial': args?.device_serial,
-                })
-              })
-            }),
-          );
+          // webrtc?.webSocket?.sink.add(
+          //   jsonEncode({
+          //     'type': 'message',
+          //     'target_uuid': args?.target,
+          //     'from':args?.Uuid,
+          //     'payload':jsonEncode({
+          //       'cmd':'closertc',
+          //       'data':jsonEncode({
+          //         'jwt': args?.jwt,
+          //         'uuid': args?.Uuid,
+          //         'device_serial': args?.device_serial,
+          //       })
+          //     })
+          //   }),
+          // );
          webrtc?.close();
          Navigator.pop(context);
          return false;
@@ -511,9 +511,13 @@ class _VideoControlPageState extends State<VideoControlPage> {
                                 onPressed: _toggleFullscreen,
                                 child: const Text('全屏'),
                               ),
+                              // ElevatedButton(
+                              //   onPressed: _switchMode,
+                              //   child: Text('模式: $_mode'),
+                              // ),
                               ElevatedButton(
-                                onPressed: _switchMode,
-                                child: Text('模式: $_mode'),
+                                onPressed: _toggleControl,
+                                child: Text(_isControlling ? '停止操控' : '申请操控'),
                               ),
                               if (_showKeyboard)
                                 ElevatedButton(
@@ -525,20 +529,17 @@ class _VideoControlPageState extends State<VideoControlPage> {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _toggleControl,
-                                child: Text(_isControlling ? '停止操控' : '申请操控'),
-                              ),
-                              ElevatedButton(
-                                onPressed: _toggleMicrophone,
-                                child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
-                              ),
-                            ],
-                          ),
+                          // const SizedBox(height: 8),
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          //   children: [
+                          //
+                          //     ElevatedButton(
+                          //       onPressed: _toggleMicrophone,
+                          //       child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
+                          //     ),
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),
@@ -585,13 +586,13 @@ class _VideoControlPageState extends State<VideoControlPage> {
                                       onPressed: _toggleFullscreen,
                                       child: const Text('全屏'),
                                     ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(80, 36), // 宽:100，高:40
-                                      ),
-                                      onPressed: _switchMode,
-                                      child: Text('模式: $_mode'),
-                                    ),
+                                    // ElevatedButton(
+                                    //   style: ElevatedButton.styleFrom(
+                                    //     minimumSize: const Size(80, 36), // 宽:100，高:40
+                                    //   ),
+                                    //   onPressed: _switchMode,
+                                    //   child: Text('模式: $_mode'),
+                                    // ),
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         minimumSize: const Size(80, 36), // 宽:100，高:40
@@ -599,13 +600,13 @@ class _VideoControlPageState extends State<VideoControlPage> {
                                       onPressed: _toggleControl,
                                       child: Text(_isControlling ? '停止操控' : '申请操控'),
                                     ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(80, 36), // 宽:100，高:40
-                                      ),
-                                      onPressed: _toggleMicrophone,
-                                      child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
-                                    ),
+                                    // ElevatedButton(
+                                    //   style: ElevatedButton.styleFrom(
+                                    //     minimumSize: const Size(80, 36), // 宽:100，高:40
+                                    //   ),
+                                    //   onPressed: _toggleMicrophone,
+                                    //   child: Text(_microphoneOn ? '关闭麦克风' : '打开麦克风'),
+                                    // ),
                                     if (_showKeyboard)
                                       ElevatedButton(
                                         onPressed: _toggleCombinationMode,

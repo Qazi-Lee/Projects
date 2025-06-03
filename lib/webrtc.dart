@@ -29,14 +29,16 @@ class WebRTCClient {
       log("5 秒后 ICE 状态为: $currentIceState", name: 'WebRTC');
       if (currentState == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected||
           currentState == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
-        onConnectClosed!();
+        _handClose=true;
         _handlingDisconnect = false;
+        onConnectClosed!();
         return ;
       }
       if (currentIceState == RTCIceConnectionState.RTCIceConnectionStateDisconnected||
       currentIceState == RTCIceConnectionState.RTCIceConnectionStateFailed) {
-        onConnectClosed!();
+        _handClose=true;
         _handlingDisconnect = false;
+        onConnectClosed!();
         return ;
       }
     });
@@ -92,13 +94,14 @@ class WebRTCClient {
               return;
             }
           }
-          if(state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
+          else if(state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
               state == RTCPeerConnectionState.RTCPeerConnectionStateFailed )
           {
             if(!_isExiting)
             {
-              _handClose=true;
+
               _handlePotentialDisconnect();
+
               return;
             }
           }
@@ -285,11 +288,16 @@ void TestRener() async
             })
           }),
         });
-        webSocket?.sink.add(candidateMsg);
+        SendCandidateMsg(candidateMsg);
+      //  webSocket?.sink.add(candidateMsg);
       }
     };
   }
-
+  void SendCandidateMsg(String? Msg) async
+  {
+    await Future.delayed(Duration(milliseconds: 100));
+    webSocket?.sink.add(Msg);
+  }
   // 8. 处理 answer
 //设置webrtc的远端描述
   Future<void> handleAnswer(String sdp) async {
@@ -342,10 +350,10 @@ void TestRener() async
   RTCDataChannel get dataChannel => _dataChannel;
 
   void dispose() {
-    _peerConnection.close();
     _dataChannel.close();
     _remoteRenderer.dispose();
     _localStream.dispose();
+    _peerConnection.close();
   }
 
   void close() {

@@ -32,6 +32,7 @@ dependencies:
   device_info_plus: ^10.0.1
   permission_handler: ^11.0.1 # 仅Android需要
   fluttertoast: ^8.2.4
+  flutter_joystick: ^1.0.3
   flutter:
     sdk: flutter
   flutter_webrtc: ^0.13.1+hotfix.1
